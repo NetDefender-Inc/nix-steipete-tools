@@ -20,6 +20,7 @@
           sonoscli = pkgs.callPackage ./nix/pkgs/sonoscli.nix {};
           bird = pkgs.callPackage ./nix/pkgs/bird.nix {};
           peekaboo = pkgs.callPackage ./nix/pkgs/peekaboo.nix {};
+          poltergeist = pkgs.callPackage ./nix/pkgs/poltergeist.nix {};
         }
       );
 
@@ -30,6 +31,7 @@
         sonoscli = self.packages.${system}.sonoscli;
         bird = self.packages.${system}.bird;
         peekaboo = self.packages.${system}.peekaboo;
+        poltergeist = self.packages.${system}.poltergeist;
       });
     };
 }
