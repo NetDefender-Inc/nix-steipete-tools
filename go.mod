@@ -1,3 +1,3 @@
-module github.com/clawdbot/nix-stepiete-tools
+module github.com/clawdbot/nix-steipete-tools
 
 go 1.22
