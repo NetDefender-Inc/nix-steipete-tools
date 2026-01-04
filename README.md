@@ -6,6 +6,15 @@ Nix packaging for [Peter Steinberger's](https://github.com/steipete) tools, with
 
 Darwin/aarch64 only (Apple Silicon Macs).
 
+## Why this exists
+
+These tools are essential for a capable clawdbot instance - screen capture, camera access, TTS, messaging. Packaging them as Nix flakes with clawdbot plugin metadata means:
+
+- **Reproducible**: Pinned versions, no Homebrew drift
+- **Declarative**: Add a plugin, `home-manager switch`, done
+- **Fresh**: CI keeps tools and skills at latest automatically
+- **Integrated**: Skills teach your bot how to use each tool
+
 ## What's included
 
 | Tool | What it does |
@@ -80,15 +89,6 @@ Fetches latest release versions/URLs/hashes and updates the Nix expressions. Ora
 | **Garnix** | On push | Builds all packages via `checks.*` |
 
 Automated PRs keep everything fresh without manual intervention.
-
-## Why this exists
-
-These tools are essential for a capable clawdbot instance - screen capture, camera access, TTS, messaging. Packaging them as Nix flakes with clawdbot plugin metadata means:
-
-- **Reproducible**: Pinned versions, no Homebrew drift
-- **Declarative**: Add a plugin, `home-manager switch`, done
-- **Fresh**: CI keeps tools and skills at latest automatically
-- **Integrated**: Skills teach your bot how to use each tool
 
 ## License
 
