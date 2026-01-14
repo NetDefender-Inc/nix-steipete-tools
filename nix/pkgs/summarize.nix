@@ -99,7 +99,6 @@ if stdenv.isLinux then
       (cd packages/core && tsc -p tsconfig.build.json)
       tsc -p tsconfig.build.json
       node scripts/build-cli.mjs
-      pnpm prune --prod
       runHook postBuild
     '';
 
