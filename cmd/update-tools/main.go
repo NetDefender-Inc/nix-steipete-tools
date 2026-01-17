@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 
 	"github.com/clawdbot/nix-steipete-tools/internal"
@@ -105,7 +106,7 @@ func updateSummarize(repoRoot string) error {
 	if err := updateSourceBlock(summarizeFile, "aarch64-darwin", assetURL, assetHash); err != nil {
 		return err
 	}
-	srcRe := regexp.MustCompile(`(?s)src = fetchurl \{[^}]*hash = "sha256-[^"]+";`)
+	srcRe := regexp.MustCompile(`(?s)src = fetchurl \{.*?hash = "sha256-[^"]+";`)
 	if err := internal.ReplaceOnceFunc(summarizeFile, srcRe, func(s string) string {
 		return regexp.MustCompile(`hash = "sha256-[^"]+";`).ReplaceAllString(s, fmt.Sprintf(`hash = "%s";`, srcHash))
 	}); err != nil {
@@ -121,10 +122,14 @@ func updateSummarize(repoRoot string) error {
 	log.Printf("[update-tools] summarize: deriving pnpm hash")
 	logText, buildErr := internal.NixBuildSummarize()
 	pnpmHash := internal.ExtractGotHash(logText)
+	if pnpmHash == "" && runtime.GOOS == "darwin" {
+		log.Printf("[update-tools] summarize: no pnpm hash on darwin, trying x86_64-linux")
+		logText, buildErr = internal.NixBuildSummarizeSystem("x86_64-linux")
+		pnpmHash = internal.ExtractGotHash(logText)
+	}
 	if pnpmHash == "" {
 		_ = os.WriteFile(summarizeFile, orig, 0644)
-		log.Printf("[update-tools] summarize pnpm hash not found; restored original file (build err: %v)", buildErr)
-		return nil
+		return fmt.Errorf("summarize pnpm hash not found (build err: %v)", buildErr)
 	}
 	if err := internal.ReplaceOnceFunc(summarizeFile, pnpmRe, func(s string) string {
 		return regexp.MustCompile(`hash = "sha256-[^"]+";`).ReplaceAllString(s, fmt.Sprintf(`hash = "%s";`, pnpmHash))
@@ -161,8 +166,7 @@ func updateOracle(repoRoot string) error {
 	if err != nil {
 		return err
 	}
-	lockURL := fmt.Sprintf("https://github.com/steipete/oracle/archive/refs/tags/%s.tar.gz", rel.TagName)
-	lockHash, err := internal.PrefetchHash(lockURL)
+	lockHash, err := internal.PrefetchGitHub("steipete", "oracle", rel.TagName)
 	if err != nil {
 		return err
 	}
@@ -194,8 +198,7 @@ func updateOracle(repoRoot string) error {
 	pnpmHash := internal.ExtractGotHash(logText)
 	if pnpmHash == "" {
 		_ = os.WriteFile(oracleFile, orig, 0644)
-		log.Printf("[update-tools] oracle pnpm hash not found; restored original file (build err: %v)", buildErr)
-		return nil
+		return fmt.Errorf("oracle pnpm hash not found (build err: %v)", buildErr)
 	}
 	if err := internal.ReplaceOnceFunc(oracleFile, pnpmRe, func(s string) string {
 		return regexp.MustCompile(`hash = "sha256-[^"]+";`).ReplaceAllString(s, fmt.Sprintf(`hash = "%s";`, pnpmHash))
