@@ -182,7 +182,9 @@ func updateOracle(repoRoot string) error {
 	}
 	lockRe := regexp.MustCompile(`(?s)lockSrc = fetchFromGitHub \{[^}]*hash = "sha256-[^"]+";`)
 	if err := internal.ReplaceOnceFunc(oracleFile, lockRe, func(s string) string {
-		return regexp.MustCompile(`hash = "sha256-[^"]+";`).ReplaceAllString(s, fmt.Sprintf(`hash = "%s";`, lockHash))
+		out := regexp.MustCompile(`rev = "[^"]+";`).ReplaceAllString(s, fmt.Sprintf(`rev = "%s";`, rel.TagName))
+		out = regexp.MustCompile(`hash = "sha256-[^"]+";`).ReplaceAllString(out, fmt.Sprintf(`hash = "%s";`, lockHash))
+		return out
 	}); err != nil {
 		return err
 	}
