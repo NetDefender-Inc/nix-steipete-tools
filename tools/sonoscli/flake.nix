@@ -8,20 +8,31 @@
 
   outputs = { self, nixpkgs, root }:
     let
-      system = builtins.currentSystem;
-      packagesForSystem = root.packages.${system} or {};
-      sonoscli = packagesForSystem.sonoscli or null;
+      lib = nixpkgs.lib;
+      systems = builtins.attrNames root.packages;
+      pluginFor = system:
+        let
+          packagesForSystem = root.packages.${system} or {};
+          sonoscli = packagesForSystem.sonoscli or null;
+        in
+          if sonoscli == null then null else {
+            name = "sonoscli";
+            skills = [ ./skills/sonoscli ];
+            packages = [ sonoscli ];
+            needs = {
+              stateDirs = [];
+              requiredEnv = [];
+            };
+          };
     in {
-      packages.${system} = if sonoscli == null then {} else { sonoscli = sonoscli; };
+      packages = lib.genAttrs systems (system:
+        let
+          sonoscli = (root.packages.${system} or {}).sonoscli or null;
+        in
+          if sonoscli == null then {}
+          else { sonoscli = sonoscli; }
+      );
 
-      openclawPlugin = if sonoscli == null then null else {
-        name = "sonoscli";
-        skills = [ ./skills/sonoscli ];
-        packages = [ sonoscli ];
-        needs = {
-          stateDirs = [];
-          requiredEnv = [];
-        };
-      };
+      openclawPlugin = pluginFor;
     };
 }

@@ -8,20 +8,31 @@
 
   outputs = { self, nixpkgs, root }:
     let
-      system = builtins.currentSystem;
-      packagesForSystem = root.packages.${system} or {};
-      summarize = packagesForSystem.summarize or null;
+      lib = nixpkgs.lib;
+      systems = builtins.attrNames root.packages;
+      pluginFor = system:
+        let
+          packagesForSystem = root.packages.${system} or {};
+          summarize = packagesForSystem.summarize or null;
+        in
+          if summarize == null then null else {
+            name = "summarize";
+            skills = [ ./skills/summarize ];
+            packages = [ summarize ];
+            needs = {
+              stateDirs = [];
+              requiredEnv = [];
+            };
+          };
     in {
-      packages.${system} = if summarize == null then {} else { summarize = summarize; };
+      packages = lib.genAttrs systems (system:
+        let
+          summarize = (root.packages.${system} or {}).summarize or null;
+        in
+          if summarize == null then {}
+          else { summarize = summarize; }
+      );
 
-      openclawPlugin = if summarize == null then null else {
-        name = "summarize";
-        skills = [ ./skills/summarize ];
-        packages = [ summarize ];
-        needs = {
-          stateDirs = [];
-          requiredEnv = [];
-        };
-      };
+      openclawPlugin = pluginFor;
     };
 }

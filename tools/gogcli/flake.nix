@@ -8,20 +8,31 @@
 
   outputs = { self, nixpkgs, root }:
     let
-      system = builtins.currentSystem;
-      packagesForSystem = root.packages.${system} or {};
-      gogcli = packagesForSystem.gogcli or null;
+      lib = nixpkgs.lib;
+      systems = builtins.attrNames root.packages;
+      pluginFor = system:
+        let
+          packagesForSystem = root.packages.${system} or {};
+          gogcli = packagesForSystem.gogcli or null;
+        in
+          if gogcli == null then null else {
+            name = "gogcli";
+            skills = [ ./skills/gogcli ];
+            packages = [ gogcli ];
+            needs = {
+              stateDirs = [];
+              requiredEnv = [];
+            };
+          };
     in {
-      packages.${system} = if gogcli == null then {} else { gogcli = gogcli; };
+      packages = lib.genAttrs systems (system:
+        let
+          gogcli = (root.packages.${system} or {}).gogcli or null;
+        in
+          if gogcli == null then {}
+          else { gogcli = gogcli; }
+      );
 
-      openclawPlugin = if gogcli == null then null else {
-        name = "gogcli";
-        skills = [ ./skills/gog ];
-        packages = [ gogcli ];
-        needs = {
-          stateDirs = [];
-          requiredEnv = [];
-        };
-      };
+      openclawPlugin = pluginFor;
     };
 }
